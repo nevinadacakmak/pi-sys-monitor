@@ -1,0 +1,17 @@
+A command-line tool in C that reads CPU usage, memory, and temperature from /proc and /sys on the Pi, 
+displays them in a live-updating terminal dashboard. Exposed via Cloudflare tunnel.
+
+usage+, 
+memory+, 
+temperature,-
+is my mc server active.-
+is pi up+
+cpu util+
+num of cores+
+freq+
+
+to do:
+sockets
+cloudflare
+pi.nevinadacakmak.com
+daemon and final setup
