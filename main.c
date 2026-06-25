@@ -5,123 +5,6 @@
 #include <unistd.h>
 #include <math.h>
 
-void graph(int samp, int delay, int numofcores, long int* memo_util_arr, long int overall_value, int maxfreq, double* cpu_value_arr, int j) //gonna get rid of this
-{
-    printf("\033[2J\n");
-    printf("\033[H\n");
-
-    printf("Nbr of samples: %d --- every %d microSecs (%.3f secs)\n", samp, delay, (float)delay/1e6);
-
-    printf("\n");
-
-        //MEMORY
-        printf("v Memory %.2f GB\n", memo_util_arr[j] / 1e6); 
-
-        for(int n = 12; n > 0; n--)
-        {
-            if (n==12)
-            {
-                printf("%d GB |",(int)(overall_value/1e6)); 
-            }
-            else
-            {
-                printf("      |");
-            }
-            for(int i = 0; i < j; i++)
-            {
-                    if (ceil(memo_util_arr[i]*12.0/(int)(overall_value)) == n) //how many bars does it fill?
-                    {
-                        printf("#");
-                    }
-                    else
-                    {
-                        printf(" ");
-                    }
-            }
-            printf("\n");
-        }
-        
-        printf("0 GB  ");
-        for(int o = 0; o < samp+1; o++) //+1 for the _ for the axis
-        {
-            printf("_");
-        }
-        printf("\n");
-        printf("\n");
-
-        //CPU
-        printf("v CPU %.2f %%\n",cpu_value_arr[j]);
-        for(int n = 10; n > 0; n--)
-        {
-            if (n==10)
-            {
-                printf("100 %% |");
-            }
-            else {printf("      |");}
-            for(int i = 0; i < j; i++)
-            {
-                    if (ceil(cpu_value_arr[i]*10/100) == n) //how many bars does it fill?
-                    {
-                        printf(":");
-                    }
-                    else
-                    {
-                        printf(" ");
-                    }
-            }
-            printf("\n");
-        }
-        printf("0 %%   ");
-        for(int o = 0; o < samp+1; o++)
-        {
-            printf("_");
-        }
-        printf("\n");
-        printf("\n");
-
-        //CORES
-        printf("Number of Cores : %d @ %.2f GHz\n",numofcores,(double)(maxfreq/1e6));
-        while(numofcores > 0)
-        {
-            if (numofcores%4==0)
-            {
-                printf("\n");
-            }
-
-            if (numofcores >= 4)
-            {
-                printf("+--+ +--+ +--+ +--+\n");
-                printf("|  | |  | |  | |  |\n");
-                printf("+--+ +--+ +--+ +--+\n");
-                numofcores -= 4;
-            }
-            if (numofcores == 3)
-            {
-                printf("+--+ +--+ +--+\n");
-                printf("|  | |  | |  |\n");
-                printf("+--+ +--+ +--+\n");
-                numofcores -= 3;
-            }
-            if (numofcores == 2)
-            {
-                printf("+--+ +--+\n");
-                printf("|  | |  |\n");
-                printf("+--+ +--+\n");
-                numofcores -= 2;
-            }
-            if (numofcores == 1) //bad code, can be simplified
-            {
-                printf("+--+\n");
-                printf("|  |\n");
-                printf("+--+\n");
-                numofcores -= 1;
-            }
-        }
-        printf("\n");
-}
-  
-
-
 int main(){
 
     int samp = 20; //needs to be contin.
@@ -140,7 +23,7 @@ int main(){
         exit(1);
     }
 
-    char buffer5[32];
+    char buffer[32];
     char line[256];
 
     FILE* cpu_info = fopen("/proc/cpuinfo","r");
@@ -154,8 +37,17 @@ int main(){
         printf("/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq is empty or couldn't be opened.\n");
     }
     
-    fgets(buffer5, 32, maxfreqfile);
-    maxfreq = atoi(buffer5); //finds maximum frequency
+    fgets(buffer, 32, maxfreqfile);
+    maxfreq = atoi(buffer); //finds maximum frequency
+
+    //calculates temparature
+
+    //need to do "cat /sys/class/thermal/thermal_zone0/type"
+    int temparature = fopen("/sys/class/thermal/thermal_zone0/temp","r");
+    temparature *= (1/1000);
+
+    //checks if mc server is up
+    
 
     //calculates num of cores
     for(int i = 0; i < 11; i++)
@@ -177,16 +69,15 @@ int main(){
             printf("/proc/stat is empty or couldn't be opened.\n");
         }
         
-        char buffer[32];
-        char buffer4[32];
+        char buffer2[32];
+        char buffer3[32];
         char dummy[50];
-        char buffer2[256];
         
         //find used memo (line3 - line1)
-        char* overall_memo = fgets(buffer,32,memo_info);
+        char* overall_memo = fgets(buffer2,32,memo_info);
 
         fgets(dummy,32,memo_info);
-        char* used_memo = fgets(buffer4, 32, memo_info);
+        char* used_memo = fgets(buffer3, 32, memo_info);
 
         long int used_value = 0;
         long int overall_value = 0;
@@ -235,8 +126,9 @@ int main(){
         //siblings in the proc/cpuinfo
         // cpu_info is the file <- /proc/stat
 
-        graph(samp, delay, numofcores, memo_util_arr, overall_value, maxfreq, cpu_value_arr, j);
-
+        printf("samp %d, delay %d, numofcores %d, memo_util_arr %ld, overall_value %ld, maxfreq %d, cpu_value_arr %f\n",samp, delay, numofcores, memo_util_arr[j], overall_value, maxfreq, cpu_value_arr[j]);
+        //memo util arr ld and cpu value arr 
+        
         usleep(delay); //delay
 
         fclose(memo_info);
