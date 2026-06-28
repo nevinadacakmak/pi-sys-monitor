@@ -8,12 +8,12 @@ cpu util+
 num of cores+
 freq+
 sockets+
+add mc server status+
+add pi uptime+
+fix cpu calculation+
+work on json. what to display?+
 
 to do:
-work on json. what to display?
-fix cpu calculation
-add mc server status
-add pi uptime
 daemon and final setup
 cloudflare
 pi.nevinadacakmak.com

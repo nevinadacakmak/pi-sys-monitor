@@ -1,3 +1,5 @@
+#define _POSIX_C_SOURCE 200809L
+
 #include <stdio.h>
 #include <ctype.h>
 #include <string.h>
@@ -10,13 +12,12 @@ void calculate_metrics(double delay, char *out, size_t out_size){
     int numofcores = 0;
     int maxfreq = 0;
 
-    long int prev_sum= 0, prev_idle = 0; //to calculate CPU by difference
+    double memo_util_val = 0; //to record values by the sample size
+    double cpu_value = 0; 
 
-    long int memo_util_val = 0; //to record values by the sample size
-    long int cpu_value = 0; 
-
-    char buffer[32];
+    char buffer[32]={0};
     char line[256];
+    char dummy[128];
 
     FILE* cpu_info = fopen("/proc/cpuinfo","r");
     FILE* maxfreqfile = fopen("/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq","r");
@@ -29,7 +30,7 @@ void calculate_metrics(double delay, char *out, size_t out_size){
         printf("/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq is empty or couldn't be opened.\n");
     }
     
-    fgets(buffer, 32, maxfreqfile);
+    fgets(buffer, sizeof(buffer), maxfreqfile);
     //finds maximum frequency
     maxfreq = atoi(buffer);
 
@@ -40,12 +41,42 @@ void calculate_metrics(double delay, char *out, size_t out_size){
     if (temp_file == NULL) {
         printf("/proc/meminfo is empty or couldn't be opened.\n");
     }
-    char temp_bf[32];
-    char* temperature = fgets(temp_bf,32,temp_file);
-    double temp_f = atof(temperature)/1000;
+    char temp_bf[32]={0};
+    fgets(temp_bf,sizeof(temp_bf),temp_file);
+    double temp_f = atof(temp_bf)/1000.0;
+    fclose(temp_file);
 
     //checks if mc server is up
-    //TODO: implmement later
+    char mc_server[64] = "unknown";
+    FILE* mc_server_pipe = popen("docker ps --filter name=skyfactory --format '{{.Status}}' 2>/dev/null","r");
+    if (mc_server_pipe == NULL){
+        printf("popen failed\n");
+    }
+
+    if (mc_server_pipe != NULL) {
+        if (fgets(mc_server, sizeof(mc_server), mc_server_pipe) != NULL) {
+            mc_server[strcspn(mc_server, "\r\n")] = '\0';
+        }
+        pclose(mc_server_pipe);
+    } 
+    else {
+        perror("popen failed");
+    }
+
+    if (mc_server[0] == '\0') {
+        strcpy(mc_server, "stopped");
+    }
+
+    //checks the pi uptime
+    FILE* uptime = fopen("/proc/uptime","r");
+    if (uptime == NULL){
+        printf("/proc/uptime is empty or couldn't be opened\n");
+    }
+    char dummy0[64]={0};
+    double uptime_f;
+    fscanf(uptime,"%lf %s",&uptime_f, &dummy0[0]);
+
+    fclose(uptime);
 
     //calculates num of cores
     for(int i = 0; i < 11; i++)
@@ -53,7 +84,6 @@ void calculate_metrics(double delay, char *out, size_t out_size){
         fgets(line, 256, cpu_info);
     }
     numofcores = atoi(line+11);
-
 
     FILE* memo_info = fopen("/proc/meminfo","r");
     FILE* stat_info = fopen("/proc/stat","r");
@@ -68,7 +98,6 @@ void calculate_metrics(double delay, char *out, size_t out_size){
     
     char buffer2[256];
     char buffer3[32];
-    char dummy[50];
     
     //find used memo (line3 - line1)
     char* overall_memo = fgets(buffer2,32,memo_info);
@@ -76,32 +105,41 @@ void calculate_metrics(double delay, char *out, size_t out_size){
     fgets(dummy,32,memo_info);
     char* used_memo = fgets(buffer3, 32, memo_info);
 
-    long int used_value = 0;
-    long int overall_value = 0;
+    double used_value = 0;
+    double overall_value = 0;
 
-    sscanf(overall_memo,"%s %ld %s",&dummy[0],&overall_value,&dummy[1]);
-    sscanf(used_memo,"%s %ld %s",&dummy[2],&used_value,&dummy[3]);
+    sscanf(overall_memo,"%s %lf %s",&dummy[0],&overall_value,&dummy[1]);
+    sscanf(used_memo,"%s %lf %s",&dummy[2],&used_value,&dummy[3]);
 
     memo_util_val = overall_value - used_value; //ceil or floor can both be used
 
     //"CPU"
     //cpu util:(sum - idle / sum) x 100 is the formula.
 
-    char* cpu_calc = fgets(buffer2, 256, stat_info);
+    char* cpu_calc = fgets(buffer2, sizeof(buffer2), stat_info);
 
-    long int sum = 0;
-    long int idle = 0;
-    long int v1,v2,v3,v4,v5,v6,v7,v8,v9,v10;
+    double sum1 = 0;
+    double sum2 = 0;
+    double idle1 = 0;
+    double idle2 = 0;
+    double v1,v2,v3,v4,v5,v6,v7,v8,v9,v10;
     char bleh[32];
 
-    sscanf(cpu_calc, "%s %ld %ld %ld %ld %ld %ld %ld %ld %ld %ld", bleh, &v1, &v2, &v3, &v4, &v5, &v6, &v7, &v8, &v9, &v10); //calculation for the cpu
-    sum = v1 + v2 + v3 + v4 + v5 + v6 + v7 + v8 + v9 + v10;
-    idle = v4 + v5;
+    sscanf(cpu_calc, "%s %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf", bleh, &v1, &v2, &v3, &v4, &v5, &v6, &v7, &v8, &v9, &v10); //calculation for the cpu
+    sum1 = v1 + v2 + v3 + v4 + v5 + v6 + v7 + v8 + v9 + v10;
+    idle1 = v4 + v5;
 
-    long int sum_diff = sum - prev_sum;
-    long int idle_diff = idle - prev_idle;
+    sleep(delay); //for good cpu calculation
 
-    //sleep(delay); //more sleep can be added if wanted
+    rewind(stat_info);
+
+    cpu_calc = fgets(buffer2, sizeof(buffer2), stat_info);
+    sscanf(cpu_calc, "%s %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf", bleh, &v1, &v2, &v3, &v4, &v5, &v6, &v7, &v8, &v9, &v10); //calculation for the cpu
+    sum2 = v1 + v2 + v3 + v4 + v5 + v6 + v7 + v8 + v9 + v10;
+    idle2 = v4 + v5;
+
+    double sum_diff = sum2 - sum1;
+    double idle_diff = idle2 - idle1;
 
     if (sum_diff != 0.0) 
     {
@@ -112,19 +150,16 @@ void calculate_metrics(double delay, char *out, size_t out_size){
         cpu_value = 0.0;
     }
 
-    prev_sum = sum;
-    prev_idle = idle;
-
     //"Cores"
     //siblings in the proc/cpuinfo
     // cpu_info is the file <- /proc/stat
 
     snprintf(out, out_size,
-        "{\"delay\":%.2f,\"numOfCores\":%d,\"memoUtil\":%ld,"
-        "\"overallValue\":%ld,\"maxFreq\":%d,\"cpuValue\":%ld,"
-        "\"temperature\":%.2f}",
+        "{\"delay\":%.2f,\"numOfCores\":%d,\"memoUtil\":%lf,"
+        "\"overallValue\":%lf,\"maxFreq\":%d,\"cpuValue\":%lf,"
+        "\"temperature\":%.2f, \"upTime\":%lf, \"McServer\":\"%s\"}",
         delay, numofcores, memo_util_val, overall_value,
-        maxfreq, cpu_value, temp_f); 
+        maxfreq, cpu_value, temp_f, uptime_f, mc_server); 
     
     sleep(delay); //delay
 
