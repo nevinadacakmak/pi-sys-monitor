@@ -13,7 +13,7 @@ int main(){
     int server_fd, client_fd;
     struct sockaddr_in address;
     socklen_t addrlen = sizeof(address);
-    char buffer[4096] = {0};
+    char buffer[8192] = {0};
 
 
     //create socket file descriptor
@@ -66,10 +66,10 @@ int main(){
             printf("hi\n");
 
             //reply to client
-            char response[4096];
+            char response[8192];
             int n = snprintf(response, sizeof(response),
                 "HTTP/1.1 200 OK\r\n"
-                "Content-Type: text/html; charset=utf-8\r\n"
+                "Content-Type: application/json; charset=utf-8\r\n"
                 "Content-Length: %zu\r\n"
                 "Connection: close\r\n"
                 "\r\n"

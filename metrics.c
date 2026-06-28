@@ -119,9 +119,12 @@ void calculate_metrics(double delay, char *out, size_t out_size){
     //siblings in the proc/cpuinfo
     // cpu_info is the file <- /proc/stat
 
-    snprintf(out, out_size, "delay=%lf, numofcores=%d, memo_util_arr=%ld, overall_value=%ld, maxfreq=%d, cpu_value=%ld, temperature=%lf\n",
-        delay, numofcores, memo_util_val, overall_value, maxfreq, cpu_value, temp_f);
-    //memo util arr ld and cpu value arr 
+    snprintf(out, out_size,
+        "{\"delay\":%.2f,\"numOfCores\":%d,\"memoUtil\":%ld,"
+        "\"overallValue\":%ld,\"maxFreq\":%d,\"cpuValue\":%ld,"
+        "\"temperature\":%.2f}",
+        delay, numofcores, memo_util_val, overall_value,
+        maxfreq, cpu_value, temp_f); 
     
     sleep(delay); //delay
 
