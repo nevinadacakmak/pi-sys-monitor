@@ -1,21 +1,23 @@
 CC = gcc
 CFLAGS = -Wall -Wextra -std=c99
+CPPFLAGS = -I.
+LDFLAGS =
+LDLIBS = -lm
 
-TARGET1 = socket_server
-TARGET2 = socket_client
+TARGETS = socket_server socket_client sysmon
 
-.PHONY: all
-all: $(TARGET1) $(TARGET2)
+.PHONY: all clean
 
-$(TARGET1): socket_server.o
-	$(CC) $(CFLAGS) -o $(TARGET1) socket_server.c
+all: $(TARGETS)
 
-$(TARGET2): socket_client.o
-	$(CC) $(CFLAGS) -o $(TARGET2) socket_client.o
+socket_server: socket_server.o
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS)
+
+sysmon: main.o metrics.o socket_client.o
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 
 %.o: %.c
-	$(CC) $(CFLAGS) -c $< -o $@
+	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
 
-.PHONY: clean
 clean:
-	rm -f *.o $(TARGET1) $(TARGET2)
+	rm -f *.o $(TARGETS)

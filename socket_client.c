@@ -7,11 +7,10 @@
 #include <arpa/inet.h>
 #include <sys/socket.h>
 
-int socket_client(){
+int socket_client(char *message){
     int client_fd = 0;
     struct sockaddr_in serv_addr;
     char buffer[1024] = {0};
-    const char *hello = "Hello from client";
 
     //create client socket file descriptor
     if ((client_fd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
@@ -37,7 +36,7 @@ int socket_client(){
     }
 
     //send message to server
-    send(client_fd, hello, strlen(hello), 0);
+    send(client_fd, message, strlen(message), 0);
     printf("Hello message sent to server\n");
 
     //read response from server
