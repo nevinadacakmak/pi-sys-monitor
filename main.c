@@ -61,8 +61,9 @@ int main(){
             printf("Request received:\n%s\n", buffer);
 
             char body[4096];
-            calculate_metrics(10, 100000, body, sizeof(body));
+            calculate_metrics(0.1, body, sizeof(body));
             size_t body_len = strlen(body);
+            printf("hi\n");
 
             //reply to client
             char response[4096];
