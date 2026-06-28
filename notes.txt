@@ -11,7 +11,7 @@ num of cores+
 freq+
 
 to do:
-sockets
+sockets+
 cloudflare
 pi.nevinadacakmak.com
 daemon and final setup
