@@ -4,16 +4,13 @@ CPPFLAGS = -I.
 LDFLAGS =
 LDLIBS = -lm
 
-TARGETS = socket_server socket_client sysmon
+TARGETS = sysmon
 
 .PHONY: all clean
 
 all: $(TARGETS)
 
-socket_server: socket_server.o
-	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS)
-
-sysmon: main.o metrics.o socket_client.o
+sysmon: main.o metrics.o
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 
 %.o: %.c
