@@ -12,8 +12,10 @@ add mc server status+
 add pi uptime+
 fix cpu calculation+
 work on json. what to display?+
+daemon and final setup+
 
 to do:
-daemon and final setup
 cloudflare
 pi.nevinadacakmak.com
+
+in progress:

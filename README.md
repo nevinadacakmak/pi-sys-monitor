@@ -24,15 +24,15 @@ metrics.c/h   — pure functions that read /proc, /sys, and process state and re
 
 ## Metrics
 
-| Field | Source | Notes |
-|---|---|---|
-| CPU usage (%) | `/proc/stat` | Computed from the delta between two snapshots of cumulative CPU time (`(busy_delta / total_delta) * 100`), not a single instantaneous read |
-| Memory usage | `/proc/meminfo` | Total minus available, reported in kB by the kernel |
-| CPU core count | `/proc/cpuinfo` | Counted from CPU entries |
-| Max CPU frequency | `/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq` | In kHz, as reported by the kernel |
-| Temperature | `/sys/class/thermal/thermal_zone0/temp` | Reported in millidegrees Celsius, divided by 1000 |
-| Uptime | `/proc/uptime` | Seconds since boot |
-| Minecraft server status | `docker ps` via `popen` | Not kernel-exposed data — checked as a running process/container, not a `/proc` read |
+| Field                   | Source                                                  | Notes                                                                                                                                      |
+| ----------------------- | ------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| CPU usage (%)           | `/proc/stat`                                            | Computed from the delta between two snapshots of cumulative CPU time (`(busy_delta / total_delta) * 100`), not a single instantaneous read |
+| Memory usage            | `/proc/meminfo`                                         | Total minus available, reported in kB by the kernel                                                                                        |
+| CPU core count          | `/proc/cpuinfo`                                         | Counted from CPU entries                                                                                                                   |
+| Max CPU frequency       | `/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq` | In kHz, as reported by the kernel                                                                                                          |
+| Temperature             | `/sys/class/thermal/thermal_zone0/temp`                 | Reported in millidegrees Celsius, divided by 1000                                                                                          |
+| Uptime                  | `/proc/uptime`                                          | Seconds since boot                                                                                                                         |
+| Minecraft server status | `docker ps` via `popen`                                 | Not kernel-exposed data — checked as a running process/container                                                                           |
 
 ## Building
 
@@ -98,4 +98,4 @@ The server only binds locally — it doesn't handle TLS or public exposure itsel
 
 - [Beej's Guide to Network Programming](https://beej.us/guide/bgnet/) — socket programming
 - [RFC 7230](https://datatracker.ietf.org/doc/html/rfc7230) / MDN — HTTP/1.1 message format
-- Stevens, *Advanced Programming in the UNIX Environment* — daemon architecture (upcoming)
+- Stevens, _Advanced Programming in the UNIX Environment_ — daemon architecture (upcoming)
