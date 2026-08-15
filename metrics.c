@@ -79,11 +79,10 @@ void calculate_metrics(double delay, char *out, size_t out_size){
     fclose(uptime);
 
     //calculates num of cores
-    for(int i = 0; i < 11; i++)
-    {
-        fgets(line, 256, cpu_info);
+    while (fgets(line, sizeof(line), cpu_info) != NULL) {
+        if (strncmp(line, "processor", 9) == 0)
+            numofcores++;
     }
-    numofcores = atoi(line+11);
 
     FILE* memo_info = fopen("/proc/meminfo","r");
     FILE* stat_info = fopen("/proc/stat","r");

@@ -126,24 +126,50 @@ int main(){
             buffer[received] = '\0';
             syslog(LOG_INFO, "Request received:\n%s\n", buffer);
 
-            char body[4096];
-            calculate_metrics(1, body, sizeof(body));
-            size_t body_len = strlen(body);
-            syslog(LOG_INFO, "hi\n");
+            //parse the http request
 
-            //reply to client
+            char method[16] = {0};
+            char path[256] = {0};
+            sscanf(buffer, "%15s %255s", method, path);
+ 
             char response[8192];
-            int n = snprintf(response, sizeof(response),
-                "HTTP/1.1 200 OK\r\n"
-                "Content-Type: application/json; charset=utf-8\r\n"
-                "Content-Length: %zu\r\n"
-                "Connection: close\r\n"
-                "\r\n"
-                "%s",
-                body_len, body);
+            int n;
 
-            send(client_fd, response, n, 0);
-            syslog(LOG_INFO, "message sent to client\n");
+            if (strcmp(path, "/metrics") == 0) {
+                char body[4096];
+                calculate_metrics(1, body, sizeof(body));
+                size_t body_len = strlen(body);
+                syslog(LOG_INFO, "hi\n");
+
+                //reply to client
+                char response[8192];
+                n = snprintf(response, sizeof(response),
+                    "HTTP/1.1 200 OK\r\n"
+                    "Content-Type: application/json; charset=utf-8\r\n"
+                    "Content-Length: %zu\r\n"
+                    "Connection: close\r\n"
+                    "\r\n"
+                    "%s",
+                    body_len, body);
+
+                send(client_fd, response, n, 0);
+                syslog(LOG_INFO, "message sent to client\n");
+            }
+            else{
+                const char *body = "{\"error\":\"not found\"}";
+                size_t body_len = strlen(body);
+ 
+                n = snprintf(response, sizeof(response),
+                    "HTTP/1.1 404 Not Found\r\n"
+                    "Content-Type: application/json; charset=utf-8\r\n"
+                    "Content-Length: %zu\r\n"
+                    "Connection: close\r\n"
+                    "\r\n"
+                    "%s",
+                    body_len, body);
+ 
+                syslog(LOG_INFO, "404: %s", path);
+            }
         }
 
         close(client_fd);

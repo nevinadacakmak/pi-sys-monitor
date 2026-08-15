@@ -9,7 +9,7 @@ The goal is to understand what's actually happening at the OS and protocol level
 - Reads CPU usage, memory usage, CPU core count, max CPU frequency, temperature, system uptime, and Minecraft server status directly from kernel interfaces (`/proc`, `/sys`) and process checks
 - Serves these metrics as JSON over a tiny HTTP API, built directly on top of BSD sockets
 - Runs as a daemon, detached from any terminal, surviving logout, logging via `syslog`
-- Exposed publicly via my Pi and Caddy
+- Exposed publicly at [pi.nevinadacakmak.com](https://pi.nevinadacakmak.com) via Caddy and port forwarding
 
 ## Design
 
@@ -24,25 +24,11 @@ metrics.c/h   — pure functions that read /proc, /sys, and process state into a
 | --- | --- | --- |
 | CPU usage (%) | `/proc/stat` | Delta between two snapshots: `(busy_delta / total_delta) * 100` |
 | Memory usage | `/proc/meminfo` | Total minus available, in kB |
-| CPU core count | `/proc/cpuinfo` | Parsed from CPU entries |
+| CPU core count | `/proc/cpuinfo` | Counts `processor` entries — ARM-compatible, unlike x86 `cpu cores` field |
 | Max CPU frequency | `/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq` | In kHz |
 | Temperature | `/sys/class/thermal/thermal_zone0/temp` | Millidegrees Celsius ÷ 1000 |
 | Uptime | `/proc/uptime` | Seconds since boot |
 | Minecraft server status | `docker ps` via `popen` | Container check, not a kernel interface |
-
-Example:
-
-{
-  "delay":1.00,
-  "numOfCores":108,
-  "memoUtil":7592204.000000,
-  "overallValue":16351168.000000,
-  "maxFreq":2400000,
-  "cpuValue":2.512563,
-  "temperature":47.40,
-  "upTime":2325330.710000,
-  "McServer":"Up 4 months (healthy)"
-}
 
 ## Building
 
@@ -71,7 +57,7 @@ The process forks, daemonizes, and detaches from the terminal immediately. It li
 To verify it's running:
 
 ```
-curl http://localhost:8080
+curl http://localhost:8080/metrics
 ```
 
 To follow logs:
@@ -86,28 +72,31 @@ To stop it:
 kill $(pgrep sysmon)
 ```
 
-`SIGTERM` triggers a clean shutdown — the accept loop exits, the socket is closed, `closelog()` is called.
-
 ## API
 
-**`GET /`**
+**`GET /metrics`**
 
 Returns a JSON object with current metrics:
 
 ```json
 {
-  "cpu_usage": 23.4,
-  "memory_used_kb": 871200,
-  "memory_total_kb": 3942180,
-  "cores": 4,
-  "max_freq_khz": 1800000,
-  "temperature_c": 51.2,
-  "uptime_s": 184221,
-  "minecraft_running": true
+  "delay": 1.00,
+  "numOfCores": 4,
+  "memoUtil": 7592204.0,
+  "overallValue": 16351168.0,
+  "maxFreq": 2400000,
+  "cpuValue": 1.82,
+  "temperature": 48.00,
+  "upTime": 2332800.0,
+  "McServer": "Up 4 months (healthy)"
 }
 ```
 
-Raw values only — unit conversion and display formatting is left to the frontend.
+Raw values, unit conversion and display formatting is left to the frontend.
+
+**`GET /`** (anything else)
+
+Returns `404 Not Found`.
 
 ## Daemon behaviour
 
@@ -121,14 +110,15 @@ On startup, `sysmon`:
 6. Registers `SIGTERM` and `SIGINT` handlers
 7. Sets up and enters the socket accept loop
 
-## Status / roadmap
+
+## Status
 
 - [x] Core metrics: CPU, memory, cores, max frequency, temperature
 - [x] Extended metrics: uptime, Minecraft server status
 - [x] HTTP server serving JSON over raw sockets
 - [x] Daemon: fork/setsid, signal handling, syslog
-- [X] Hosting on my Pi with Caddy
-- [ ] Browser-based frontend dashboard (HTML/JS polling the API)
+- [x] Self-hosted on Pi with Caddy, publicly accessible over HTTPS
+- [x] Browser dashboard at pi.nevinadacakmak.com
 
 ## References
 
