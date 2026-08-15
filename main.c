@@ -1,3 +1,5 @@
+#define _POSIX_C_SOURCE 200809L
+
 #include <stdio.h>
 #include <ctype.h>
 #include <string.h>
@@ -10,6 +12,7 @@
 #include <sys/socket.h>
 #include <signal.h>
 #include <syslog.h>
+#include <sys/types.h>
 
 #include "metrics.h"
 
